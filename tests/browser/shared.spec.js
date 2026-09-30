@@ -6,6 +6,8 @@ async function sharedFixture(browser) {
   const reports=[];
   const history=new Map();
   let failCreate=false;
+  let failFinish=false;
+  const attachments=new Map(),uploaded=new Set();
   const users={
     'author@example.test':{id:'11111111-1111-4111-8111-111111111111',email:'author@example.test',aud:'authenticated',role:'authenticated'},
     'reviewer@example.test':{id:'22222222-2222-4222-8222-222222222222',email:'reviewer@example.test',aud:'authenticated',role:'authenticated'}
@@ -16,10 +18,13 @@ async function sharedFixture(browser) {
     await context.route('**/config.js',route=>route.fulfill({contentType:'text/javascript',body:`export const config={supabaseUrl:'https://civic-test.supabase.co',supabasePublishableKey:'sb_publishable_test'};`}));
     await context.route('https://civic-test.supabase.co/**',async route=>{
       const req=route.request(),url=new URL(req.url());
-      const body=req.postDataJSON()||{};
+      const body=req.headers()['content-type']?.includes('application/json')?(req.postDataJSON()||{}):{};
       const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET, POST, PUT, OPTIONS'};
       const send=(json,status=200)=>route.fulfill({status,headers,contentType:'application/json',body:JSON.stringify(json)});
       if(req.method()==='OPTIONS')return send({});
+      if(url.pathname.startsWith('/storage/v1/object/sign/')&&req.method()==='POST')return send({signedURL:url.pathname.replace('/storage/v1','')+'?token=test'});
+      if(url.pathname.startsWith('/storage/v1/object/sign/')&&req.method()==='GET')return route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=','base64')});
+      if(url.pathname.startsWith('/storage/v1/object/civic-media/')){if(uploaded.has(url.pathname))return send({statusCode:'409',error:'Duplicate',message:'The resource already exists'},409);uploaded.add(url.pathname);return send({Key:url.pathname.replace('/storage/v1/object/',''),Id:'fixture'});}
       const token=req.headers().authorization?.slice(7);
       let user;
       try {user=users[JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString()).email];}catch{}
@@ -34,6 +39,9 @@ async function sharedFixture(browser) {
       if(name==='is_reviewer')return send(reviewer);
       if(name==='list_reports')return send(reports.map(r=>({...r,canDelete:reviewer||r._owner===user?.id})).map(({_owner,...r})=>r));
       if(name==='report_history')return send(history.get(`CS-${body.p_id}`)||[]);
+      if(name==='reserve_media'){const existing=attachments.get(body.p_id);if(existing)return send(existing);const m={id:body.p_id,reportId:body.p_report_id,kind:body.p_kind,mime:body.p_mime,size:body.p_size,path:`${body.p_report_id}/${body.p_id}.jpg`,ready:false};attachments.set(m.id,m);return send(m);}
+      if(name==='finish_media'){if(failFinish)return send({message:'Upload confirmation unavailable'},503);const m=attachments.get(body.p_id);m.ready=true;const r=reports.find(r=>r.id===`CS-${m.reportId}`);r.mediaCounts={image:[...attachments.values()].filter(a=>a.reportId===m.reportId&&a.ready&&a.kind==='image').length,audio:0};return send(null);}
+      if(name==='list_media')return send([...attachments.values()].filter(m=>m.reportId===body.p_report_id&&m.ready));
       if(name==='create_report'){
         if(!user)return send({message:'Sign in first'},403);
         if(failCreate)return send({message:'Database temporarily unavailable'},503);
@@ -60,7 +68,7 @@ async function sharedFixture(browser) {
     });
     const page=await context.newPage();await page.goto('/');await expect(page.locator('#connection-status')).toContainText('refreshed');return page;
   }
-  return {open,reports,setFailCreate:value=>{failCreate=value;},close:()=>Promise.all(contexts.map(c=>c.close()))};
+  return {open,reports,setFailCreate:value=>{failCreate=value;},setFailFinish:value=>{failFinish=value;},close:()=>Promise.all(contexts.map(c=>c.close()))};
 }
 async function login(page,email){
   await page.locator('#account-button').click();await page.locator('#auth-email').fill(email);await page.locator('#auth-password').fill('fixture-password');await page.locator('#auth-form button[value=signin]').click();await expect(page.locator('#auth-dialog')).not.toBeVisible();
@@ -84,4 +92,15 @@ test('shared service failure preserves form and never pretends to save locally',
 test('signed-out submission asks for sign-in without discarding the draft',async({browser})=>{
   const fixture=await sharedFixture(browser);
   try{const page=await fixture.open();await fillReport(page);await page.locator('#issue-form button[type=submit]').click();await expect(page.locator('#auth-dialog')).toBeVisible();await page.locator('#auth-dialog [data-close]').click();await expect(page.locator('#issue-title')).toHaveValue('Shared damaged pavement');expect(fixture.reports).toHaveLength(0);}finally{await fixture.close();}
+});
+test('shared photo upload retries after a lost confirmation and appears in another browser',async({browser})=>{
+  const fixture=await sharedFixture(browser);
+  try{
+    const author=await fixture.open();await login(author,'author@example.test');await fillReport(author);
+    const png=await author.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=10;canvas.height=10;return canvas.toDataURL('image/png').split(',')[1];});
+    await author.locator('#photo-files').setInputFiles({name:'issue.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});await expect(author.locator('#attachment-previews img')).toHaveCount(1);
+    fixture.setFailFinish(true);await author.locator('#issue-form button[type=submit]').click();await expect(author.locator('#form-error')).toContainText('all attachments');await expect(author.locator('#success-state')).toBeHidden();
+    fixture.setFailFinish(false);await author.locator('#issue-form button[type=submit]').click();await expect(author.locator('#success-state')).toBeVisible();expect(fixture.reports).toHaveLength(1);
+    const visitor=await fixture.open();await expect(visitor.locator('.request-row')).toContainText('1 photo');await visitor.locator('.request-row').click();await expect(visitor.locator('#detail-media img')).toHaveCount(1);await expect(visitor.locator('#detail-media img')).toHaveAttribute('src',/storage\/v1\/object\/sign/);
+  }finally{await fixture.close();}
 });

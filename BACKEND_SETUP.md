@@ -10,11 +10,12 @@ The free plan currently includes a 500 MB database and 50,000 monthly active aut
 
 ## 2. Apply the database migration
 
-In the project's SQL editor, run the entire file:
+In the project's SQL editor, run both files, in this order:
 
-`supabase/migrations/202609300001_civic_reports.sql`
+1. `supabase/migrations/202609300001_civic_reports.sql`
+2. `supabase/migrations/202609300002_multimedia.sql`
 
-Run it **once in a new project**. The migration is transactional and intentionally does not overwrite existing tables. It creates private tables and public RPC functions. Reports are public; account IDs and emails are not exposed through report APIs. It does not insert fake sample reports into the shared database.
+Run each **once**. If the first migration is already applied, run only the second. The migration is transactional and intentionally does not overwrite existing tables. It creates private tables and public RPC functions. Reports are public; account IDs and emails are not exposed through report APIs. It does not insert fake sample reports into the shared database.
 
 The Supabase integration can apply this migration directly after you connect your account. Alternatively use the Supabase CLI's migration workflow with the included file.
 
@@ -24,7 +25,7 @@ In **Authentication → URL Configuration**:
 
 - Site URL: `https://avutr.github.io/civicsignal/`
 - Allowed redirect URL: `https://avutr.github.io/civicsignal/`
-- For development only, optionally allow `http://127.0.0.1:4175/`.
+- For development only, optionally allow `http://127.0.0.1:4176/`.
 
 Enable email/password authentication and set minimum password length to 8. Keep email confirmation enabled for public signups.
 
@@ -71,15 +72,34 @@ Refresh runs every 60 seconds while the page is visible and no dialog is open; t
 
 ## Security and operating limits
 
-- All three report/account/history tables and the quota table are in a private schema with RLS enabled and no browser table access. Only explicit functions are granted to API roles.
+- All report, reviewer, history, quota, and media tables are in a private schema with RLS enabled and no browser table access. Only explicit functions are granted to API roles.
 - Reports can be read anonymously. Creation requires a valid Supabase Auth session. Validation, timestamps, ownership, status, quotas, and reviewer authorization are enforced inside Postgres.
 - Submissions are limited to 10 per account per rolling 24 hours. Deleting a report does not reset that quota. Quota timestamps older than 24 hours are pruned when the account next submits; inactive accounts retain timestamps until then or account deletion.
 - Repeated submission retries use the same ID. Review/deletion requests check a revision number, preventing stale edits from silently overwriting newer work.
 - Public reports contain precise locations. Do not include personal information. Deleting a report also deletes its public history. Account deletion through Supabase Auth cascades to owned reports and quota records.
 - Review notes are public; reviewer account IDs are not. The database retains actor IDs for administrators until account deletion.
-- There is no automatic connection to government departments, verification of civic claims, file uploads, messaging, or attachments.
+- There is no automatic connection to government departments, verification of civic claims, video, or messaging. Photos and audio attachments are supported.
 - The current pilot fetches up to 10,000 reports with cursor pagination. For larger deployments, implement server-side search, map bounds, aggregation, and page-based loading before increasing that limit.
 - Before an unrestricted launch, configure Auth bot protection and a UI challenge integration, monitor misuse, choose a retention policy, and configure an appropriate map tile provider. Per-account quotas alone cannot stop someone creating many accounts.
+
+## Multimedia storage and cleanup
+
+The second migration creates the private `civic-media` bucket. Only a report's author can reserve/upload an attachment, with a maximum of 3 images and 1 audio note per report. Images are capped at 2 MB after client compression; audio is capped at 8 MB. The browser limits audio duration to 60 seconds; the server enforces bytes and MIME types, not decoded duration. Photo metadata removal is performed by the official browser client, not by a server transcoder. Do not promise that files uploaded through a custom client are metadata-free.
+
+Reports are saved before attachments upload. Failed uploads preserve the form and allow retry against the same report and attachment IDs. Text and already-finished attachments may be visible while the remaining files are retried. Interrupted drafts can be removed by deleting the report. Media is fetched on opening a report, rather than downloading every photo on every map refresh.
+
+Supabase Free currently includes **1 GB file storage** and bounded egress; media can consume that quickly. See [Storage pricing](https://supabase.com/docs/guides/storage/pricing). Keep the organization on its Free plan, monitor usage, and do not promise unlimited media hosting.
+
+Report deletion revokes new reads immediately and queues its object paths for physical cleanup. Existing signed links expire after five minutes. Storage objects must be deleted through the Storage API, so the maintenance job is part of a complete shared-media setup:
+
+1. Deploy the included Edge Function: `supabase functions deploy cleanup-media --project-ref YOUR_PROJECT_REF`.
+2. Store the project's legacy **service-role key** as the GitHub Actions **secret** `SUPABASE_SERVICE_ROLE_KEY`. This key is used only by the maintenance workflow, not the Pages build. Never place it in repository variables, `config.js`, or a client bundle.
+3. Set the repository variable `SUPABASE_MEDIA_CLEANUP_ENABLED` to `true` after the function is deployed.
+4. Run **Clean up deleted report media** from Actions once to check connectivity. It subsequently runs hourly and removes up to 100 queued objects per run. A ten-minute grace period covers uploads that were in flight during report deletion. Without this job, deleted objects remain inaccessible to new public reads but continue consuming storage quota.
+
+The cleanup function uses Supabase's automatically provided server-side environment variables and checks the service-role authorization header. Cleanup failures leave the queue intact for retry. For a higher-volume deployment, increase scheduling frequency/throughput and monitor the queue. GitHub may disable scheduled workflows in an inactive public repository; check the job alongside free-project inactivity pauses.
+
+Before inviting testers, post a photo and an audio note from one account, open both from a separate browser, delete the report, and verify the maintenance run removes the physical objects after the grace period. A successful local storage-policy test does not prove that a hosted bucket and maintenance function have been provisioned.
 
 ## Tests and their scope
 

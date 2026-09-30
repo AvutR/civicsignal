@@ -4,7 +4,7 @@ import './bundle-client.js';
 const output=new URL('../dist/',import.meta.url);
 await rm(output,{recursive:true,force:true});
 await mkdir(output,{recursive:true});
-for(const name of ['index.html','styles.css','app.js','data.js','backend.js','favicon.svg','.nojekyll'])await copyFile(new URL(`../${name}`,import.meta.url),new URL(name,output));
+for(const name of ['index.html','styles.css','app.js','data.js','backend.js','media.js','favicon.svg','.nojekyll'])await copyFile(new URL(`../${name}`,import.meta.url),new URL(name,output));
 const browserConfig={supabaseUrl:process.env.SUPABASE_URL||config.supabaseUrl,supabasePublishableKey:process.env.SUPABASE_PUBLISHABLE_KEY||config.supabasePublishableKey};
 if(Boolean(browserConfig.supabaseUrl)!==Boolean(browserConfig.supabasePublishableKey))throw Error('Set both Supabase URL and publishable key, or leave both empty for local demo mode.');
 if(browserConfig.supabaseUrl){

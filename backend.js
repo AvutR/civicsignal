@@ -65,3 +65,21 @@ export async function deleteReport(report) {
 export async function reportHistory(id) {
   return checked(await (await getClient()).rpc('report_history',{p_id:id.slice(3)}));
 }
+export async function uploadMedia(reportId,items,onProgress=()=>{}){
+  const api=await getClient();
+  for(let index=0;index<items.length;index++){
+    const item=items[index];onProgress(`Uploading attachment ${index+1} of ${items.length}…`);
+    const reservation=checked(await api.rpc('reserve_media',{p_report_id:reportId.slice(3),p_id:item.id,p_kind:item.kind,p_mime:item.mime,p_size:item.size}));
+    if(reservation.ready)continue;
+    const uploaded=await api.storage.from('civic-media').upload(reservation.path,item.blob,{contentType:item.mime,upsert:false,cacheControl:'300'});
+    if(uploaded.error&&Number(uploaded.error.statusCode)!==409)throw Error(uploaded.error.message);
+    checked(await api.rpc('finish_media',{p_id:item.id}));
+  }
+}
+export async function listMedia(reportId){
+  const api=await getClient(),items=checked(await api.rpc('list_media',{p_report_id:reportId.slice(3)}));
+  return Promise.all(items.map(async item=>{
+    const data=checked(await api.storage.from('civic-media').createSignedUrl(item.path,300));
+    return {...item,url:data.signedUrl};
+  }));
+}

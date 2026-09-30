@@ -1,15 +1,20 @@
 # CivicSignal
 
-A community infrastructure reporting application with an interactive map, searchable requests, calculated insights, and a Supabase backend ready for a free-tier pilot.
+A Snap Map-style application for public infrastructure and governance issues with place-based photos, audio, and text, plus a Supabase backend ready for a free-tier pilot. See [the product vision](VISION.md).
 
-**Live site:** https://avutr.github.io/civicsignal/  
+**Live site:** https://avutr.github.io/civicsignal/
+
 **Repository:** https://github.com/AvutR/civicsignal
 
 The site currently runs in **local demo mode** until a Supabase project is connected. The shared backend code is implemented and tested, but the database must be provisioned and configured before visitors can share reports. Follow [BACKEND_SETUP.md](BACKEND_SETUP.md) to activate it.
 
 ## What works
 
+- Start with the community map; filter to the visible area or fit all matching signals.
 - Place reports using a map click, a city centre, device location, or precise coordinates.
+- Take/upload up to 3 photos, record a 60-second voice note, or upload audio; text-only reports remain supported.
+- Photos are resized to at most 1600 pixels and re-encoded without embedded metadata. Audio files are limited to 8 MB.
+- Open multimedia map pins to view photos and play audio.
 - Search and combine category, age, and status filters across the map, list, and insights.
 - Open report details, export filtered JSON, and delete reports with confirmation.
 - Local demo: 12 sample reports, browser persistence, local status updates, and reset.
@@ -29,7 +34,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:4175. On Windows PowerShell with restricted script execution, use `npm.cmd` in place of `npm`. Use HTTP rather than opening `index.html` directly because the application uses JavaScript modules. The development command bundles the Supabase client locally.
+Open http://127.0.0.1:4176. On Windows PowerShell with restricted script execution, use `npm.cmd` in place of `npm`. Use HTTP rather than opening `index.html` directly because the application uses JavaScript modules. The development command bundles the Supabase client locally.
 
 Leave `config.js` empty for the local demo. For shared development, put only your Supabase project URL and public publishable/anon key in that file. Never use a secret or service-role key in frontend configuration.
 
@@ -53,15 +58,15 @@ Set `PW_CHANNEL=chrome` to use installed Chrome for browser tests. A hosted Supa
 
 The public repository deploys to **GitHub Pages** through `.github/workflows/pages.yml`. Every push to `main` runs the tests and builds the site before deployment. All asset paths work under the `/civicsignal/` repository path. GitHub Pages requires no paid plan for this public repository.
 
-For the backend, use a **Supabase Free** project with Postgres and Auth. Add the `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` repository variables to activate shared mode during the Pages build. No service-role secret belongs in GitHub or the browser for normal application operation. See [the complete deployment guide](BACKEND_SETUP.md).
+For the backend, use a **Supabase Free** project with Postgres and Auth. Add the `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` repository variables to activate shared mode during the Pages build. Normal reporting requires no service-role secret. Optional media maintenance uses a server-only GitHub Actions secret; it is never included in the browser build. See [the complete deployment guide](BACKEND_SETUP.md).
 
 Free-tier usage limits and inactivity pauses apply. Public signup confirmations and password recovery require configured email delivery; Supabase's default sender is restricted. The backend is suitable for a small pilot, not a promise of unlimited hosting. References: [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Supabase pricing](https://supabase.com/pricing), [Supabase email setup](https://supabase.com/docs/guides/auth/auth-smtp).
 
 ## Data and privacy
 
-Demo data stays under `civicsignal.reports.v1` in localStorage. Clearing browser data removes it. Existing demo reports are never silently uploaded when shared mode is enabled.
+Demo report text stays under `civicsignal.reports.v1` in localStorage; image/audio blobs are stored in IndexedDB. Clearing browser data removes it. Existing demo reports are never silently uploaded when shared mode is enabled. JSON exports include report text and attachment metadata, not media binaries.
 
-Shared reports, coordinates, statuses, and review notes are public. Email addresses and ownership IDs stay behind the API. Authors can delete their own reports; reviewers can remove any report. Do not submit sensitive personal information. Authentication sessions are remembered in the browser; sign out on shared devices.
+Shared reports, photos, audio, coordinates, statuses, and review notes are public. Media is stored in a private Supabase bucket and read through short-lived signed URLs; deleted reports immediately lose new media read access, while existing links expire within five minutes. The optional maintenance workflow removes queued physical files. Email addresses and ownership IDs stay behind the API. Authors can delete their own reports; reviewers can remove any report. Do not submit sensitive personal information. Authentication sessions are remembered in the browser; sign out on shared devices.
 
 Leaflet and the Supabase client are bundled locally. Map tiles load from OpenStreetMap and fonts from Google Fonts. Device location is requested only on an explicit button click. Maps degrade gracefully when external tiles cannot load.
 
@@ -73,7 +78,9 @@ For a broader launch, finish email delivery and bot protection, provide operator
 - `app.js`: application state and UI workflows.
 - `data.js`: sample data, validation, filtering, and metrics.
 - `backend.js`, `config.js`: Supabase API adapter and public configuration.
-- `supabase/migrations/`: database schema, permissions, and RPCs.
+- `media.js`: photo compression, audio recording, and local attachment storage.
+- `supabase/migrations/`: database, storage policies, permissions, and RPCs.
+- `supabase/functions/cleanup-media/`: retryable cleanup for removed attachments.
 - `tests/`: data, real-SQL authorization, and browser tests.
 - `scripts/`: local server, browser bundling, and static build.
 - `.github/workflows/pages.yml`: tested deployment to GitHub Pages.

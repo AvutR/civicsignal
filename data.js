@@ -1,4 +1,4 @@
-export const categories={water:'Water',roads:'Roads',power:'Power',health:'Health',education:'Education'};
+export const categories={water:'Water',roads:'Roads',power:'Power',health:'Health',education:'Education',sanitation:'Sanitation',transport:'Public transport','public-space':'Public spaces',governance:'Governance'};
 export const statuses=['Submitted','In review','In progress','Resolved'];
 export const cities={Raipur:[21.25,81.63],Mumbai:[19.07,72.88],Nashik:[19.99,73.78],Kolkata:[22.57,88.36],Hyderabad:[17.38,78.49],Jaipur:[26.91,75.79],'New Delhi':[28.61,77.2],Bengaluru:[12.97,77.59],Chennai:[13.08,80.27],Pune:[18.52,73.86]};
 export function seedReports(now=Date.now()){

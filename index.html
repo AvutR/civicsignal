@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Explore community infrastructure needs, map civic reports, and try a transparent local reporting workflow with CivicSignal.">
+  <meta name="description" content="Explore a map of public infrastructure and governance issues. Share photos, voice notes, and text from your community.">
   <meta name="theme-color" content="#14261e">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <title>CivicSignal | Infrastructure intelligence</title>
+  <title>CivicSignal | Your community, on the map</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="styles.css">
@@ -29,16 +29,16 @@
       <div class="top-actions">
         <span class="demo-badge">Interactive prototype</span>
         <button class="text-button" id="account-button" hidden>Sign in</button>
-        <a class="submit-button" href="#report">+ Report an issue</a>
+        <a class="submit-button" href="#report">+ Add a signal</a>
       </div>
     </header>
 
     <main id="top"><div class="demo-notice">Explore sample reports or add your own. Reports stay in this browser and are not sent to public authorities.</div><p class="error-message" id="connection-error" role="status"></p>
       <section class="hero-row">
         <div>
-          <p class="eyebrow"><span class="status-pulse"></span> Civic intelligence platform</p>
-          <h1>See what your<br><em>community</em> needs.</h1>
-          <p class="hero-copy">A shared signal for better public investment. Collect, understand, and act on the issues people face every day.</p>
+          <p class="eyebrow"><span class="status-pulse"></span> A map made by the community</p>
+          <h1>Your neighbourhood.<br><em>In focus.</em></h1>
+          <p class="hero-copy">Spot an issue. Drop a pin. Share a photo, voice note, or story about public infrastructure and governance.</p>
         </div>
         <div class="hero-meta">
           <div class="coverage-stamp"><span class="stamp-icon">✦</span><span><strong>India sample map</strong><small>Sample communities across India</small></span></div>
@@ -46,36 +46,30 @@
         </div>
       </section>
 
-      <section class="metrics" aria-label="Overview of all reports">
-        <article class="metric-card metric-primary"><span class="metric-label">Total requests</span><strong id="total-count">0</strong><span class="metric-foot">All reports in this browser</span></article>
-        <article class="metric-card"><span class="metric-label">High priority</span><strong id="priority-count">0</strong><span class="metric-foot">Open reports needing attention</span></article>
-        <article class="metric-card"><span class="metric-label">Resolved</span><strong id="resolved-count">0</strong><span class="metric-foot">Across all time</span></article>
-        <article class="metric-card"><span class="metric-label">Communities heard</span><strong id="community-count">0</strong><span class="metric-foot">Unique reported locations</span></article>
-      </section>
-
       <section class="workspace" id="map-section">
         <div class="map-panel">
           <div class="panel-heading">
-            <div><p class="section-kicker">Demand landscape</p><h2>Where people need help</h2></div>
+            <div><p class="section-kicker">Explore your surroundings</p><h2>The community map</h2></div>
             <div class="map-legend"><span><i class="legend-dot critical"></i>High priority</span><span><i class="legend-dot normal"></i>General</span></div>
           </div>
           <div class="map-toolbar">
-            <div class="filter-group"><span class="filter-label">Issue type</span><div class="chip-list" id="category-filters"><button class="filter-chip selected" data-category="all">All issues <b>0</b></button><button class="filter-chip" data-category="water">Water <b>0</b></button><button class="filter-chip" data-category="roads">Roads <b>0</b></button><button class="filter-chip" data-category="power">Power <b>0</b></button><button class="filter-chip" data-category="health">Health <b>0</b></button><button class="filter-chip" data-category="education">Education <b>0</b></button></div></div>
+            <div class="filter-group"><span class="filter-label">Issue type</span><div class="chip-list" id="category-filters"><button class="filter-chip selected" data-category="all">All issues <b>0</b></button><button class="filter-chip" data-category="water">Water <b>0</b></button><button class="filter-chip" data-category="roads">Roads <b>0</b></button><button class="filter-chip" data-category="power">Power <b>0</b></button><button class="filter-chip" data-category="health">Health <b>0</b></button><button class="filter-chip" data-category="education">Education <b>0</b></button><button class="filter-chip" data-category="sanitation">Sanitation <b>0</b></button><button class="filter-chip" data-category="transport">Transport <b>0</b></button><button class="filter-chip" data-category="public-space">Public spaces <b>0</b></button><button class="filter-chip" data-category="governance">Governance <b>0</b></button></div></div>
             <div class="date-filter"><label for="date-range">Time frame</label><select id="date-range"><option value="all">All time</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div>
           </div>
+          <div class="map-explore-controls"><label><input id="map-area-only" type="checkbox"> Only this map area</label><button id="fit-signals" class="text-button" type="button">Fit signals</button><a href="#report" class="map-add-link">+ Add here</a></div>
           <div id="map" aria-label="Geographical map of citizen requests"></div>
           <div class="map-status"><span id="map-note">Click the map to place a report pin</span><span id="visible-count">Loading reports...</span></div>
         </div>
 
         <aside class="side-panel" id="report">
-          <div class="side-heading"><div><p class="section-kicker">Your voice matters</p><h2>Submit an issue</h2></div><span class="voice-badge">Local demo</span></div>
-          <p class="side-intro">Tell us what your community needs. Try the reporting workflow with a location and a short description.</p>
+          <div class="side-heading"><div><p class="section-kicker">Your voice matters</p><h2>Add your signal</h2></div><span class="voice-badge">Local demo</span></div>
+          <p class="side-intro">A broken footpath, missed waste collection, or a public service that needs attention. Show what is happening, where it happens.</p>
           <form id="issue-form">
             <p id="auth-open-hint" class="field-help" hidden></p>
             <p id="form-error" class="error-message" role="alert"></p>
-            <label class="field-label" for="issue-title">What is the issue?</label>
-            <input id="issue-title" name="title" minlength="3" maxlength="120" type="text" placeholder="e.g. No clean water in Ward 4" required>
-            <div class="field-row"><div><label class="field-label" for="issue-category">Category</label><select id="issue-category" name="category"><option value="water">Water</option><option value="roads">Roads</option><option value="power">Power</option><option value="health">Health</option><option value="education">Education</option></select></div><div><label class="field-label" for="issue-priority">Urgency</label><select id="issue-priority" name="priority"><option value="normal">General</option><option value="high">High</option></select></div></div>
+            <label class="field-label" for="issue-title">Short title <span>(optional with a photo or audio)</span></label>
+            <input id="issue-title" name="title" minlength="3" maxlength="120" type="text" placeholder="e.g. No clean water in Ward 4">
+            <div class="field-row"><div><label class="field-label" for="issue-category">Category</label><select id="issue-category" name="category"><option value="water">Water</option><option value="roads">Roads</option><option value="power">Power</option><option value="health">Health</option><option value="education">Education</option><option value="governance">Governance</option><option value="public-space">Public spaces</option><option value="transport">Transport</option><option value="sanitation">Sanitation</option></select></div><div><label class="field-label" for="issue-priority">Urgency</label><select id="issue-priority" name="priority"><option value="normal">General</option><option value="high">High</option></select></div></div>
             <label class="field-label" for="city-select">Place a pin</label>
             <select id="city-select"><option value="">Choose a sample city</option></select>
             <button class="text-button location-button" type="button" id="locate-me">Use my location</button>
@@ -83,12 +77,23 @@
             <details class="coordinate-details"><summary>Enter exact coordinates</summary><div class="field-row"><div><label for="latitude">Latitude</label><input id="latitude" type="number" min="-90" max="90" step="any"></div><div><label for="longitude">Longitude</label><input id="longitude" type="number" min="-180" max="180" step="any"></div></div><button id="use-coordinates" class="text-button" type="button">Set coordinates</button></details>
             <label class="field-label" for="issue-location">Location</label>
             <div class="location-input"><span>⌖</span><input id="issue-location" name="location" minlength="2" maxlength="120" type="text" placeholder="Enter a city, district, or locality" required></div>
-            <label class="field-label" for="issue-description">More detail <span>(optional)</span></label>
-            <textarea id="issue-description" name="description" maxlength="2000" rows="3" placeholder="What is happening? Who is affected?"></textarea>
-            <div class="form-footer"><span class="privacy-note">⌾ Stored on this device</span><button class="submit-button" type="submit">Submit issue <span>→</span></button></div>
+            <label class="field-label" for="issue-description">Tell the story <span>(optional)</span></label>
+            <textarea id="issue-description" name="description" maxlength="2000" rows="3" placeholder="What happened? How does it affect people here?"></textarea>
+            <fieldset class="media-composer"><legend>Show it. Say it. Write it.</legend><p class="field-help">Add up to 3 photos and a 60-second audio note. Text-only reports work too.</p>
+              <div class="media-actions"><label class="media-file-button">Take photo<input id="camera-photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"></label><label class="media-file-button">Add photos<input id="photo-files" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><label class="media-file-button">Add audio<input id="audio-file" type="file" accept="audio/mpeg,audio/mp4,audio/wav,audio/x-wav,audio/ogg,audio/webm"></label><button class="text-button" id="record-audio" type="button">Record voice</button><button class="text-button recording-stop" id="stop-recording" type="button" hidden>Stop recording</button></div>
+              <p id="recording-status" class="field-help" role="status"></p><div id="attachment-previews"></div><p class="field-help">Photos are resized and their embedded metadata removed. Keep personal details out of public reports.</p>
+            </fieldset>
+            <div class="form-footer"><span class="privacy-note">⌾ Stored on this device</span><button class="submit-button" type="submit">Post signal <span>→</span></button></div>
           </form>
           <div class="success-state" id="success-state" hidden><span class="success-check">✓</span><strong>Signal received</strong><p id="success-message">Your report has been saved locally.</p><button type="button" class="text-button" id="new-issue">Submit another issue</button></div>
         </aside>
+      </section>
+
+      <section class="metrics" aria-label="Overview of all reports">
+        <article class="metric-card metric-primary"><span class="metric-label">Total requests</span><strong id="total-count">0</strong><span class="metric-foot">All reports in this browser</span></article>
+        <article class="metric-card"><span class="metric-label">High priority</span><strong id="priority-count">0</strong><span class="metric-foot">Open reports needing attention</span></article>
+        <article class="metric-card"><span class="metric-label">Resolved</span><strong id="resolved-count">0</strong><span class="metric-foot">Across all time</span></article>
+        <article class="metric-card"><span class="metric-label">Communities heard</span><strong id="community-count">0</strong><span class="metric-foot">Unique reported locations</span></article>
       </section>
 
       <section class="bottom-row">
@@ -110,8 +115,8 @@
   <dialog id="password-dialog" aria-labelledby="password-title"><button class="dialog-close" data-close aria-label="Close password reset">&times;</button><h2 id="password-title">Set a new password</h2><form id="password-form"><label class="field-label" for="new-password">New password</label><input id="new-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><button class="submit-button" type="submit">Save password</button><p id="password-message" class="error-message" role="alert"></p></form></dialog>
   <dialog id="delete-dialog" aria-labelledby="delete-title"><h2 id="delete-title">Delete this report?</h2><p>This permanently removes the report and its review history. This cannot be undone.</p><p id="delete-error" class="error-message" role="alert"></p><div class="dialog-actions"><button class="text-button" data-close>Cancel</button><button class="submit-button" id="confirm-delete">Delete report</button></div></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
-  <dialog id="detail-dialog" aria-labelledby="detail-title"><button class="dialog-close" data-close aria-label="Close report">&times;</button><p class="section-kicker">Report details</p><h2 id="detail-title"></h2><p id="detail-meta" class="field-help"></p><p id="detail-description"></p><p id="detail-date" class="field-help"></p><label class="field-label" for="detail-status">Review status</label><select id="detail-status"><option>Submitted</option><option>In review</option><option>In progress</option><option>Resolved</option></select><p id="review-permission" class="field-help"></p><div id="review-note-field" hidden><label class="field-label" for="review-note">Public review note</label><textarea id="review-note" maxlength="1000" rows="3" placeholder="What changed? What happens next?"></textarea></div><p id="detail-error" class="error-message" role="alert"></p><ol id="report-history" aria-label="Report history"></ol><div class="dialog-actions"><button class="text-button" id="show-on-map">Show on map</button><button class="submit-button" id="save-status">Save status</button></div><button class="text-button danger-button" id="delete-report">Delete report</button></dialog>
-  <dialog id="privacy-dialog" aria-labelledby="privacy-title"><button class="dialog-close" data-close aria-label="Close data principles">&times;</button><h2 id="privacy-title">Your data, on your device</h2><p id="privacy-body">This prototype stores reports in your browser's local storage. No reports are submitted to a server or public authority, and no account is required. Other visitors cannot see your reports.</p><p>Avoid entering private or sensitive information. Clearing browser data removes your reports. Export your filtered reports as JSON to keep a copy.</p><p>Map tiles are loaded from OpenStreetMap; fonts are loaded from Google. The map library is bundled locally. These services receive ordinary web requests. Your location is requested only when you choose &ldquo;Use my location&rdquo;.</p><p id="privacy-scope">Status changes are a demo workflow, not an official response. A shared service would need authentication, moderation, a database, and an agreed privacy policy.</p></dialog>
+  <dialog id="detail-dialog" aria-labelledby="detail-title"><button class="dialog-close" data-close aria-label="Close report">&times;</button><p class="section-kicker">Report details</p><h2 id="detail-title"></h2><p id="detail-meta" class="field-help"></p><div id="detail-media" class="detail-media"></div><p id="media-load-status" class="field-help" role="status"></p><p id="detail-description"></p><p id="detail-date" class="field-help"></p><label class="field-label" for="detail-status">Review status</label><select id="detail-status"><option>Submitted</option><option>In review</option><option>In progress</option><option>Resolved</option></select><p id="review-permission" class="field-help"></p><div id="review-note-field" hidden><label class="field-label" for="review-note">Public review note</label><textarea id="review-note" maxlength="1000" rows="3" placeholder="What changed? What happens next?"></textarea></div><p id="detail-error" class="error-message" role="alert"></p><ol id="report-history" aria-label="Report history"></ol><div class="dialog-actions"><button class="text-button" id="show-on-map">Show on map</button><button class="submit-button" id="save-status">Save status</button></div><button class="text-button danger-button" id="delete-report">Delete report</button></dialog>
+  <dialog id="privacy-dialog" aria-labelledby="privacy-title"><button class="dialog-close" data-close aria-label="Close data principles">&times;</button><h2 id="privacy-title">Your data, on your device</h2><p id="privacy-body">This prototype stores report text in local storage and photos/audio in this browser's media database. No reports are submitted to a server or public authority, and no account is required. Other visitors cannot see your reports.</p><p>Avoid entering private or sensitive information. Clearing browser data removes your reports. JSON export includes report text and attachment metadata; photo and audio files are not embedded in the export.</p><p>Map tiles are loaded from OpenStreetMap; fonts are loaded from Google. The map library is bundled locally. These services receive ordinary web requests. Your location is requested only when you choose &ldquo;Use my location&rdquo;.</p><p id="privacy-scope">Status changes are a demo workflow, not an official response. A shared service would need authentication, moderation, a database, and an agreed privacy policy.</p></dialog>
   <dialog id="reset-dialog" aria-labelledby="reset-title"><h2 id="reset-title">Reset this demo?</h2><p>This removes locally added reports and status changes, then restores the sample data. Export anything you want to keep first.</p><div class="dialog-actions"><button class="text-button" data-close>Cancel</button><button class="submit-button" id="confirm-reset">Reset demo</button></div></dialog>
   <script src="vendor/leaflet/leaflet.js" crossorigin=""></script>
   <script type="module" src="app.js"></script>
