@@ -6,3 +6,5 @@ playwright-report/
 .env
 .env.*
 !.env.example
+vendor/supabase.js
+vendor/supabase.js.LEGAL.txt
